@@ -1,0 +1,24 @@
+# pip install playwright pypdf && playwright install chromium
+from playwright.sync_api import sync_playwright
+from pypdf import PdfWriter
+
+BASE = "https://sites.google.com/view/sebastian-carias/home"
+PAGES = ["", "/portfolio", "/f27-aero", "/research"]  # your page paths
+
+files = []
+with sync_playwright() as p:
+    b = p.chromium.launch()
+    pg = b.new_page(viewport={"width": 1280, "height": 720})
+    for i, path in enumerate(PAGES):
+        pg.goto(BASE + path, wait_until="networkidle")
+        pg.wait_for_timeout(1500)  # let images/animations load
+        h = pg.evaluate("document.documentElement.scrollHeight")
+        pg.pdf(path=f"p{i}.pdf", width="1280px", height=f"{h}px",
+               print_background=True)
+        files.append(f"p{i}.pdf")
+    b.close()
+
+w = PdfWriter()
+for f in files:
+    w.append(f)
+w.write("site.pdf")
